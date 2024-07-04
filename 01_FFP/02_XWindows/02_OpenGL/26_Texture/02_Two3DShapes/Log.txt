@@ -1,0 +1,2 @@
+texture_kundali 1
+texture_stone 2

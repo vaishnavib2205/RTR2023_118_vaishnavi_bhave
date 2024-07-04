@@ -1,0 +1,10 @@
+#include<Windows.h>
+
+#include "OGL.h"
+
+MYICON ICON MyIcon.ico
+
+SCHOOLWALL_TEXTURE_BITMAP BITMAP schoolWallText.bmp
+
+
+

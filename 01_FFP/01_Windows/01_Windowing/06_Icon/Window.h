@@ -1,0 +1,2 @@
+#pragma once // kontyaahi header file mdhe first line hee asli pahije => ekach header file multiple velela include keli aani hee line nasel tar redundacy chi error yete => mazyakdun multiple velela include kela tari tu ekdach include kar => hash ne suru honarya goshti compiler la precompiled astat
+#define MYICON 101 //MYICON navachya mazya resource la mi unique integer deun hash define kartoy

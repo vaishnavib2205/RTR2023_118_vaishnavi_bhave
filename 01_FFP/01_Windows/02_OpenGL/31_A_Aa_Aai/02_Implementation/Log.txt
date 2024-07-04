@@ -1,0 +1,12 @@
+Program started successfully 
+Image width : 305 	 , height : 283 	 , channel : 4 
+Image width : 208 	 , height : 177 	 , channel : 4 
+Image width : 626 	 , height : 560 	 , channel : 4 
+Image width : 612 	 , height : 606 	 , channel : 4 
+Image width : 534 	 , height : 626 	 , channel : 4 
+Image width : 250 	 , height : 250 	 , channel : 4 
+Image width : 361 	 , height : 250 	 , channel : 4 
+Image width : 422 	 , height : 422 	 , channel : 4 
+Image width : 640 	 , height : 427 	 , channel : 4 
+Image width : 512 	 , height : 626 	 , channel : 4 
+Program ended successfully 

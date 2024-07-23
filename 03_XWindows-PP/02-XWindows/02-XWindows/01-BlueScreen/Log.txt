@@ -1,0 +1,4 @@
+logfile created 
+10 , matching FBconig foundThe Chosen visual id is = 0x36
+core profile based GLXContext Obtained successfully 
+supporting direct rendering 

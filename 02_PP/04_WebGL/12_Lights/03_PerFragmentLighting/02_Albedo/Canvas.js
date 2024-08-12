@@ -40,7 +40,7 @@ var nAnimationEnabled = false;
 var lightAmbient = [0.5, 0.5, 0.5];
 var lightDiffuse = [1.0, 1.0, 1.0];
 var lightSpecular = [1.0, 1.0, 1.0];
-var lightPosition = [100.0, 100.0, 100.0, 1.0];
+var lightPosition = [200.0, 100.0, 100.0, 1.0];
 
 var materialAmbient = [0.0, 0.0, 0.0];
 var materialDiffuse = [0.5, 0.2, 0.7];

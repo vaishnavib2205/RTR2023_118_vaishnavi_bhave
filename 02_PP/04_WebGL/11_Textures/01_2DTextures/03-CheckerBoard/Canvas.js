@@ -7,21 +7,30 @@ var canvas_original_height;
 
 // WebGL related Varaiables
 
-
-var shaderProgramObject = null;
-
 const vertexAttributeEnum = 
 {
-    AMC_ATTRIBUTE_POSITION:0
+    AMC_ATTRIBUTE_POSITION:0,
+    AMC_ATTRIBUTE_TEXCOORDS:1
 };
 
 var shaderProgramObject = null;
 
 var vao = null;
 var vbo = null;
+var vbo_texture = null;
 
 var mvpMatrixUniform ;
-var orthoGraphicProjectionMatrix;
+var perspectiveProjectionMatrix;
+
+var smiley_texture ;
+
+var cb_texture ;
+var textureSamplerUniform;
+
+var CHECK_IMAGE_WIDTH = 64;
+var CHECK_IMAGE_HEIGHT = 64; 
+
+var checkImage = [CHECK_IMAGE_WIDTH * CHECK_IMAGE_HEIGHT * 4];
 
 
 var requestAnimationFrame =
@@ -85,14 +94,14 @@ function keyDown(event)
             break;
         case 70:
         case 102:
-
             toggleFullscreen();
-
             break;
     
         default:
             break;
     }
+
+
     
 }
 
@@ -182,10 +191,13 @@ function initialize()
     "#version 300 es"+
     "\n"+
     "in vec4 aPosition;"+
+    "in vec2 aTexCoord;"+
+    "out vec2 oTexCoord;"+
     "uniform mat4 uMVPMatrix;"+
     "void main(void)"+
     "{"+
     "gl_Position = uMVPMatrix * aPosition;"+
+    "oTexCoord = aTexCoord;"+
     "}";
 
     var vertexShaderObject = gl.createShader(gl.VERTEX_SHADER);
@@ -212,10 +224,12 @@ function initialize()
     "#version 300 es"+
     "\n"+
     "precision highp float;"+
+    "uniform highp sampler2D uTextureSampler;"+
+    "in vec2 oTexCoord;"+
     "out vec4 FragColor;"+
     "void main(void)"+
     "{"+
-    "FragColor = vec4(1.0f , 1.0f , 1.0f ,1.0f);"+
+    "FragColor = texture(uTextureSampler , oTexCoord);"+
     "}";
 
     var fragmentShaderObject = gl.createShader(gl.FRAGMENT_SHADER);
@@ -243,6 +257,7 @@ function initialize()
     gl.attachShader(shaderProgramObject , fragmentShaderObject);
 
     gl.bindAttribLocation(shaderProgramObject , vertexAttributeEnum.AMC_ATTRIBUTE_POSITION , "aPosition");  
+    gl.bindAttribLocation(shaderProgramObject , vertexAttributeEnum.AMC_ATTRIBUTE_TEXCOORDS , "aTexCoord"); 
     
     gl.linkProgram(shaderProgramObject);
 
@@ -262,14 +277,18 @@ function initialize()
     }
 
     mvpMatrixUniform = gl.getUniformLocation(shaderProgramObject , "uMVPMatrix");
+    textureSamplerUniform = gl.getUniformLocation(shaderProgramObject , "uTextureSampler");
 
     // triangle attributes
 
-    var trianglePosition = new Float32Array([
+
+    var rectangleTexcoord = new Float32Array([
     
-        0.0 , 50.0 , 0.0,  // 		glVertex3f(0.0f, 1.0f, 0.0f);
-        -50.0 , -50.0 , 0.0, // 		glVertex3f(-1.0f, -1.0f, 0.0f);
-        50.0 , -50.0 , 0.0 // 			glVertex3f(1.0f, -1.0f, 0.0f);
+        1.0 , 1.0,
+        0.0 , 1.0,
+        0.0 , 0.0,
+        1.0 , 0.0
+
     ]);
 
     // vao
@@ -282,12 +301,26 @@ function initialize()
     vbo = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER , vbo);
 
-    gl.bufferData(gl.ARRAY_BUFFER , trianglePosition , gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER , 4*3*4 , gl.DYNAMIC_DRAW);
     gl.vertexAttribPointer(vertexAttributeEnum.AMC_ATTRIBUTE_POSITION , 3 , gl.FLOAT , false , 0 , 0 );
     gl.enableVertexAttribArray(vertexAttributeEnum.AMC_ATTRIBUTE_POSITION);
     gl.bindBuffer(gl.ARRAY_BUFFER , null);
 
+    // vbo_texture
+
+    vbo_texture = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER , vbo_texture);
+
+    gl.bufferData(gl.ARRAY_BUFFER , rectangleTexcoord , gl.STATIC_DRAW);
+    gl.vertexAttribPointer(vertexAttributeEnum.AMC_ATTRIBUTE_TEXCOORDS , 2 , gl.FLOAT , false , 0 , 0 );
+    gl.enableVertexAttribArray(vertexAttributeEnum.AMC_ATTRIBUTE_TEXCOORDS);
+    gl.bindBuffer(gl.ARRAY_BUFFER , null);
+
     gl.bindVertexArray(null);
+
+    cb_texture = loadGLTexture();
+
+    // gl.enable(gl.TEXTURE_2D);
 
     // depth initialise
     gl.clearDepth(1.0);
@@ -295,12 +328,68 @@ function initialize()
     gl.depthFunc(gl.LEQUAL);
 
     // set clear color
-    gl.clearColor(0.0 , 0.0 , 0.0 , 1.0);
+    gl.clearColor(0.75 , 0.75 , 0.75 , 1.0);
 
     // initialise projection matrix
 
-    orthoGraphicProjectionMatrix = mat4.create();
+    perspectiveProjectionMatrix = mat4.create();
 
+}
+
+function loadGLTexture()
+{
+    makeCheckImage();
+
+    smiley_texture = gl.createTexture();
+
+    smiley_texture.image = new Image();
+
+    // console.log("before src load !!! \n");
+    smiley_texture.image.src = checkImage;
+
+    // console.log("after src load !!! \n");
+
+    smiley_texture.image.onLoad = Function()
+    {
+        gl.bindTexture(gl.TEXTURE_2D , smiley_texture);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL , true);
+
+        gl.texParameteri(gl.TEXTURE_2D , gl.TEXTURE_WRAP_S , gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D , gl.TEXTURE_WRAP_T , gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D , gl.TEXTURE_MAG_FILTER , gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D , gl.TEXTURE_MIN_FILTER , gl.NEAREST);
+
+
+        gl.texImage2D(gl.TEXTURE_2D , 0 , gl.RGBA , gl.RGBA , gl.UNSIGNED_BYTE , smiley_texture.image);
+
+        gl.generateMipmap(gl.TEXTURE_2D);
+        gl.bindTexture(gl.TEXTURE_2D , null);
+
+    }
+
+    return smiley_texture[0];
+
+}
+
+function makeCheckImage()
+{
+    // variable declaration
+
+    var i, j, c;
+
+    
+    for (i = 0; i < CHECK_IMAGE_WIDTH; i++)
+    {
+        for (j = 0; j < CHECK_IMAGE_HEIGHT; j++)
+        {
+            c = ((i&8) ^ (j&8)) * 255;
+
+            checkImage[(i*64 + j) * 4 + 0] = c;
+            checkImage[(i*64 + j) * 4 + 1] = c;
+            checkImage[(i*64 + j) * 4 + 2] = c;
+            checkImage[(i*64 + j) * 4 + 3] = 0xff;
+        }
+    }
 }
 
 function resize()
@@ -321,33 +410,13 @@ function resize()
 
     // set perspection projection
 
+    mat4.perspective(perspectiveProjectionMatrix , 45.0 , parseFloat(canvas.width) / parseFloat(canvas.height) , 0.1 , 100.0);
 
-    if (canvas.width < canvas.height)
-        {
-            mat4.ortho(orthoGraphicProjectionMatrix ,
-                -100.0,
-                100.0,
-                -100.0 * (canvas.height / canvas.width),
-                100.0 * (canvas.height / canvas.width),
-                -100.0,
-                100.0
-            );
-        }
-        else
-        {
-            mat4.ortho(orthoGraphicProjectionMatrix , 
-                -100.0 * (canvas.width / canvas.height),
-                100.0 * (canvas.width / canvas.height),
-                -100.0,
-                100.0,
-                -100.0,
-                100.0
-            );
-        }
 }
 
 function display()
 { 
+    var square_position;
     // code
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -358,12 +427,66 @@ function display()
     var modelViewMatrix = mat4.create();
     var modelViewProjectionMatrix = mat4.create();
 
-    mat4.multiply(modelViewProjectionMatrix , orthoGraphicProjectionMatrix , modelViewMatrix);
+    mat4.translate(modelViewMatrix , modelViewMatrix , [0.0, 0.0 , -3.0]); // source , target , values
+
+    mat4.multiply(modelViewProjectionMatrix , perspectiveProjectionMatrix , modelViewMatrix);
     gl.uniformMatrix4fv(mvpMatrixUniform , false , modelViewProjectionMatrix);
 
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D , cb_texture);
+    gl.uniform1i(textureSamplerUniform , 0);
+
     gl.bindVertexArray(vao);
-    gl.drawArrays(gl.TRIANGLES , 0 , 3);
+
+    {
+        square_position = new Float32Array([
+    
+            0.0 , 1.0,
+            0.0 , -2.0,
+            1.0 , 0.0,
+            -2.0 , -1.0,
+            0.0 , 0.0 ,
+            -1.0 , 0.0
+    
+        ]);
+    }
+
+    gl.bindBuffer(gl.ARRAY_BUFFER , vbo);
+    gl.bufferData(gl.ARRAY_BUFFER , square_position , gl.DYNAMIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER , null);
+
+    gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
     gl.bindVertexArray(null);
+
+    // **************************************************************************************************
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D , cb_texture);
+    gl.uniform1i(textureSamplerUniform , 0);
+
+    gl.bindVertexArray(vao);
+
+    {
+        square_position = new Float32Array([
+    
+            2.41421 , 1.0,
+            -1.41421 , 1.0,
+            1.0 , 0.0,
+            1.0 , -1.0,
+            0.0 , 2.41421 ,
+            -1.0 , -1.41421
+    
+        ]);
+    }
+
+    gl.bindBuffer(gl.ARRAY_BUFFER , vbo);
+    gl.bufferData(gl.ARRAY_BUFFER , square_position , gl.DYNAMIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER , null);
+
+    gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+    gl.bindVertexArray(null);
+
+    //*************************************************************************************************
 
     gl.useProgram(null);
 

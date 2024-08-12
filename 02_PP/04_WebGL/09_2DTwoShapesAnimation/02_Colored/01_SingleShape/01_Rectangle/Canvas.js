@@ -7,35 +7,28 @@ var canvas_original_height;
 
 // WebGL related Varaiables
 
-const vertexAttributeEnum = 
+const vertexAttributeEnum =
 {
-    AMC_ATTRIBUTE_POSITION:0,
-    AMC_ATTRIBUTE_COLOR:1
-
+    AMC_ATTRIBUTE_POSITION: 0
 };
 
 var shaderProgramObject = null;
 
 var vao = null;
 var vbo = null;
-var vbo_color_triangle = null;
+var angle_rectangle = null;
 
 
-var vao_rectangle = null;
-var vbo_rectangle = null;
-var vbo_color_rectangle = null;
-
-
-var mvpMatrixUniform ;
+var mvpMatrixUniform;
 var perspectiveProjectionMatrix;
 
 
 var requestAnimationFrame =
-window.requestAnimationFrame ||
-window.webkitRequestAnimationFrame ||
-window.mozRequestAnimationFrame ||
-window.oRequestAnimationFrame ||
-window.msReuestAnimationFrame;
+    window.requestAnimationFrame ||
+    window.webkitRequestAnimationFrame ||
+    window.mozRequestAnimationFrame ||
+    window.oRequestAnimationFrame ||
+    window.msReuestAnimationFrame;
 
 
 function main()
@@ -183,172 +176,117 @@ function initialize()
     gl.viewportHeight = canvas.height;
     // vertex shader
 
-    var vertexShaderSourceCode =
-        "#version 300 es" +
-        "\n" +
-        "in vec4 aPosition;" +
-        "uniform mat4 uMVPMatrix;" +
-        "in vec4 aColor;" +
-        "out vec4 oColor;" +
-        "void main(void)" +
-        "{" +
-        "gl_Position = uMVPMatrix * aPosition;" +
-        "oColor = aColor;" +
-        "}";
+    var vertexShaderSourceCode = 
+    "#version 300 es"+
+    "\n"+
+    "in vec4 aPosition;"+
+    "uniform mat4 uMVPMatrix;"+
+    "void main(void)"+
+    "{"+
+    "gl_Position = uMVPMatrix * aPosition;"+
+    "}";
 
     var vertexShaderObject = gl.createShader(gl.VERTEX_SHADER);
-    gl.shaderSource(vertexShaderObject, vertexShaderSourceCode);
+    gl.shaderSource(vertexShaderObject , vertexShaderSourceCode);
     gl.compileShader(vertexShaderObject);
 
-    if (gl.getShaderParameter(vertexShaderObject, gl.COMPILE_STATUS) == false) {
+    if(gl.getShaderParameter(vertexShaderObject , gl.COMPILE_STATUS) == false)
+    {
         var error = gl.getShaderInfoLog(vertexShaderObject);
 
-        if (error.length > 0) {
+        if(error.length > 0)
+        {
             var Log = "vertex shader compilation error : " + error;
             alert(Log);
             uninitialize();
         }
     }
-    else {
+    else
+    {
         console.log("vertex Shader Compileed Successfully !!! \n");
     }
 
-    var fragmentShaderSourceCode =
-        "#version 300 es" +
-        "\n" +
-        "precision highp float;" +
-        "in vec4 oColor;" +
-        "out vec4 FragColor;" +
-        "void main(void)" +
-        "{" +
-        "FragColor = vec4(1.0  , 1.0 , 1.0 , 1.0);" +
-        "}";
+    var fragmentShaderSourceCode = 
+    "#version 300 es"+
+    "\n"+
+    "precision highp float;"+
+    "out vec4 FragColor;"+
+    "void main(void)"+
+    "{"+
+    "FragColor = vec4(0.0f , 0.0f , 1.0f ,1.0f);"+
+    "}";
 
     var fragmentShaderObject = gl.createShader(gl.FRAGMENT_SHADER);
-    gl.shaderSource(fragmentShaderObject, fragmentShaderSourceCode);
+    gl.shaderSource(fragmentShaderObject , fragmentShaderSourceCode);
     gl.compileShader(fragmentShaderObject);
 
-    if (gl.getShaderParameter(fragmentShaderObject, gl.COMPILE_STATUS) == false) {
+    if(gl.getShaderParameter(fragmentShaderObject , gl.COMPILE_STATUS) == false)
+    {
         var error = gl.getShaderInfoLog(fragmentShaderObject);
-        if (error.length > 0) {
+        if(error.length > 0)
+        {
             var Log = "Fragment SHader compilation error : " + error;
             alert(Log);
             uninitialize();
         }
     }
-    else {
+    else
+    {
         console.log("fragment SHader compilation Successfully !!! \n");
     }
 
     // shader Program
     shaderProgramObject = gl.createProgram();
-    gl.attachShader(shaderProgramObject, vertexShaderObject);
-    gl.attachShader(shaderProgramObject, fragmentShaderObject);
+    gl.attachShader(shaderProgramObject , vertexShaderObject);
+    gl.attachShader(shaderProgramObject , fragmentShaderObject);
 
-    gl.bindAttribLocation(shaderProgramObject, vertexAttributeEnum.AMC_ATTRIBUTE_POSITION, "aPosition");
-
+    gl.bindAttribLocation(shaderProgramObject , vertexAttributeEnum.AMC_ATTRIBUTE_POSITION , "aPosition");  
+    
     gl.linkProgram(shaderProgramObject);
 
-    if (gl.getProgramParameter(shaderProgramObject, gl.LINK_STATUS) == false) {
+    if(gl.getProgramParameter(shaderProgramObject , gl.LINK_STATUS) == false)
+    {
         var error = gl.getProgramInfoLog(shaderProgramObject);
-        if (error.length > 0) {
+        if(error.length > 0)
+        {
             var Log = "shader Program Linking Error : " + error;
             alert(Log);
             uninitialize();
         }
     }
-    else {
+    else
+    {
         console.log("ShaderProgeam Linked Successfully !!! \n");
     }
 
-    mvpMatrixUniform = gl.getUniformLocation(shaderProgramObject, "uMVPMatrix");
+    mvpMatrixUniform = gl.getUniformLocation(shaderProgramObject , "uMVPMatrix");
 
     // triangle attributes
 
-    var trianglePosition = new Float32Array([
-
-        0.0, 1.0, 0.0,
-        -1.0, -1.0, 0.0,
-        1.0, -1.0, 0.0
-    ]);
-
-    var triangleColor = new Float32Array([
-
-        1.0, 0.0, 0.0, //		glColor3f(1.0f, 0.0f, 0.0f);
-        0.0, 1.0, 0.0, //		glColor3f(0.0f, 1.0f, 0.0f);
-        0.0, 0.0, 1.0   //		glColor3f(0.0f, 0.0f, 1.0f);
-    ]);
-
     var rectanglePosition = new Float32Array([
-
-        1.0, 1.0, 0.0,		//glVertex3f(1.0f, 1.0f, 0.0f);
-        -1.0, 1.0, 0.0,		//glVertex3f(-1.0f, 1.0f, 0.0f);
-        -1.0, -1.0, 0.0,	//glVertex3f(-1.0f, -1.0f, 0.0f);
-        1.0, -1.0, 0.0		//glVertex3f(1.0f, -1.0f, 0.0f);
+    
+		1.0, 1.0, 0.0 ,		//glVertex3f(1.0f, 1.0f, 0.0f);
+		-1.0, 1.0, 0.0 ,		//glVertex3f(-1.0f, 1.0f, 0.0f);
+		-1.0, -1.0, 0.0 ,	//glVertex3f(-1.0f, -1.0f, 0.0f);
+		1.0, -1.0, 0.0		//glVertex3f(1.0f, -1.0f, 0.0f);
     ]);
 
-    var rectangleColor = new Float32Array([
+    // vao
 
-        0.0, 0.0, 1.0, //		glColor3f(1.0f, 0.0f, 0.0f);
-        0.0, 0.0, 1.0, //		glColor3f(0.0f, 1.0f, 0.0f);
-        0.0, 0.0, 1.0   //		glColor3f(0.0f, 0.0f, 1.0f);
-    ]);
+    vao = gl.createVertexArray();
+    gl.bindVertexArray(vao);
 
-    // vao triangle
+    // vbo
 
-    {
-        vao = gl.createVertexArray();
-        gl.bindVertexArray(vao);
+    vbo = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER , vbo);
 
-        // vbo
+    gl.bufferData(gl.ARRAY_BUFFER , rectanglePosition , gl.STATIC_DRAW);
+    gl.vertexAttribPointer(vertexAttributeEnum.AMC_ATTRIBUTE_POSITION , 3 , gl.FLOAT , false , 0 , 0 );
+    gl.enableVertexAttribArray(vertexAttributeEnum.AMC_ATTRIBUTE_POSITION);
+    gl.bindBuffer(gl.ARRAY_BUFFER , null);
 
-        vbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-
-        gl.bufferData(gl.ARRAY_BUFFER, trianglePosition, gl.STATIC_DRAW);
-        gl.vertexAttribPointer(vertexAttributeEnum.AMC_ATTRIBUTE_POSITION, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(vertexAttributeEnum.AMC_ATTRIBUTE_POSITION);
-        gl.bindBuffer(gl.ARRAY_BUFFER, null);
-
-        // vbo color
-
-        vbo_color_triangle = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vbo_color_triangle);
-
-        gl.bufferData(gl.ARRAY_BUFFER, triangleColor, gl.STATIC_DRAW);
-        gl.vertexAttribPointer(vertexAttributeEnum.AMC_ATTRIBUTE_COLOR, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(vertexAttributeEnum.AMC_ATTRIBUTE_COLOR);
-        gl.bindBuffer(gl.ARRAY_BUFFER, null);
-
-        gl.bindVertexArray(null);
-    }
-
-    // vao rectangle
-
-    {
-        vao_rectangle = gl.createVertexArray();
-        gl.bindVertexArray(vao_rectangle);
-
-        // vbo
-
-        vbo_rectangle = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vbo_rectangle);
-
-        gl.bufferData(gl.ARRAY_BUFFER, rectanglePosition, gl.STATIC_DRAW);
-        gl.vertexAttribPointer(vertexAttributeEnum.AMC_ATTRIBUTE_POSITION, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(vertexAttributeEnum.AMC_ATTRIBUTE_POSITION);
-        gl.bindBuffer(gl.ARRAY_BUFFER, null);
-
-        // vbo color rec
-
-        gl.vertexAttrib3f(vertexAttributeEnum.AMC_ATTRIBUTE_COLOR, 0.0, 0.0, 1.0);
-
-
-        gl.bindVertexArray(null);
-
-    }
-
-
+    gl.bindVertexArray(null);
 
     // depth initialise
     gl.clearDepth(1.0);
@@ -398,39 +336,18 @@ function display()
 
     // transformation
 
-    // triangle
-    {
-        var modelViewMatrix = mat4.create();
-        var modelViewProjectionMatrix = mat4.create();
+    var modelViewMatrix = mat4.create();
+    var modelViewProjectionMatrix = mat4.create();
 
-        mat4.translate(modelViewMatrix, modelViewMatrix, [-1.5, 0.0, -4.0]); // source , target , values
+    mat4.translate(modelViewMatrix, modelViewMatrix, [0.0, 0.0, -3.0]); // source , target , values
+    mat4.rotate(modelViewMatrix, modelViewMatrix, angle_rectangle, [1.0, 0.0, 0.0]); // source , target , values
 
-        mat4.multiply(modelViewProjectionMatrix, perspectiveProjectionMatrix, modelViewMatrix);
-        gl.uniformMatrix4fv(mvpMatrixUniform, false, modelViewProjectionMatrix);
+    mat4.multiply(modelViewProjectionMatrix, perspectiveProjectionMatrix, modelViewMatrix);
+    gl.uniformMatrix4fv(mvpMatrixUniform, false, modelViewProjectionMatrix);
 
-        gl.bindVertexArray(vao);
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
-        gl.bindVertexArray(null);
-    }
-
-
-    // rectangle
-    {
-        modelViewMatrix = mat4.create();
-        modelViewProjectionMatrix = mat4.create();
-
-        mat4.translate(modelViewMatrix, modelViewMatrix, [1.5, 0.0, -4.0]); // source , target , values
-
-        mat4.multiply(modelViewProjectionMatrix, perspectiveProjectionMatrix, modelViewMatrix);
-        gl.uniformMatrix4fv(mvpMatrixUniform, false, modelViewProjectionMatrix);
-
-        gl.bindVertexArray(vao_rectangle);
-
-        gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
-        gl.bindVertexArray(null);
-    }
-
-
+    gl.bindVertexArray(vao);
+    gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+    gl.bindVertexArray(null);
 
     gl.useProgram(null);
 
@@ -444,7 +361,10 @@ function display()
 function update()
 {
     //code
-
+    angle_rectangle -= 0.02;
+    if (angle_rectangle <= 360.0) {
+        angle_rectangle += 360.0;
+    }
 }
 
 function uninitialize()

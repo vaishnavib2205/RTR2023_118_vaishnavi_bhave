@@ -1,24 +1,22 @@
-﻿<!DOCTYPE html>
-
+<!DOCTYPE html>
 <html lang="en">
+    <!-- head -->
 
-<!-- head -->
-<head>
-    <meta charset="utf-8" />
-    <title>VBB:Canvas</title>
-</head>
+    <head>
+        
+        <meta charset="utf-8" />
+        <title>VBB:Canvas</title>
+    </head>
 
-<!-- Body -->
+    <!-- Body -->
+    <body onload="main()" >
+        <canvas id="vbb" width="800" height="600" >
+            This Browser does not support HTML5 canvas element                       
+        </canvas>
 
-<body onload="main()">
-
-    <canvas id="VBB" width="800" height="600">
-        This browser does not support HTML5 element.
-    </canvas>
-
-    <!-- Script -->
-    <script src="Canvas.js"></script>
-
-</body>
+        <!-- Script -->
+        <script src="Canvas.js" ></script>
+        <script src = "gl-matrix-min.js"></script>
+    </body>
 
 </html>

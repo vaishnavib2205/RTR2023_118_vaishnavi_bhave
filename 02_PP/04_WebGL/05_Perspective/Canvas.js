@@ -9,13 +9,15 @@ var canvas_original_height;
 
 const vertexAttributeEnum = 
 {
-    AMC_ATTRIBUTE_POSITION:0
+    AMC_ATTRIBUTE_POSITION:0,
+    AMC_ATTRIBUTE_COLOR:1
 };
 
 var shaderProgramObject = null;
 
 var vao = null;
 var vbo = null;
+var vbo_color = null;
 
 var mvpMatrixUniform ;
 var perspectiveProjectionMatrix;
@@ -32,7 +34,7 @@ window.msReuestAnimationFrame;
 function main()
 {
     // get canvas
-    canvas = document.getElementById("VBB");
+    canvas = document.getElementById("vbb");
 
     if(canvas == null)
     {
@@ -178,11 +180,14 @@ function initialize()
     var vertexShaderSourceCode = 
     "#version 300 es"+
     "\n"+
-    "in vec4 aPosition;"+
-    "uniform mat4 uMVPMatrix;"+
-    "void main(void)"+
-    "{"+
-    "gl_Position = uMVPMatrix * aPosition;"+
+    "in vec4 aPosition;" +
+    "uniform mat4 uMVPMatrix;" +
+    "in vec4 aColor;" +
+    "out vec4 oColor;" +
+    "void main(void)" +
+    "{" +
+    "gl_Position = uMVPMatrix * aPosition;" +
+    "oColor = aColor;" +
     "}";
 
     var vertexShaderObject = gl.createShader(gl.VERTEX_SHADER);
@@ -209,10 +214,11 @@ function initialize()
     "#version 300 es"+
     "\n"+
     "precision highp float;"+
-    "out vec4 FragColor;"+
-    "void main(void)"+
-    "{"+
-    "FragColor = vec4(1.0f , 1.0f , 1.0f ,1.0f);"+
+    "in vec4 oColor;" +
+    "out vec4 FragColor;" +
+    "void main(void)" +
+    "{" +
+    "FragColor = vec4(1.0, 1.0, 1.0, 1.0);" +
     "}";
 
     var fragmentShaderObject = gl.createShader(gl.FRAGMENT_SHADER);
@@ -239,7 +245,8 @@ function initialize()
     gl.attachShader(shaderProgramObject , vertexShaderObject);
     gl.attachShader(shaderProgramObject , fragmentShaderObject);
 
-    gl.bindAttribLocation(shaderProgramObject , vertexAttributeEnum.AMC_ATTRIBUTE_POSITION , "aPosition");  
+    gl.bindAttribLocation(shaderProgramObject , vertexAttributeEnum.AMC_ATTRIBUTE_POSITION , "aPosition"); 
+    gl.bindAttribLocation(shaderProgramObject , vertexAttributeEnum.AMC_ATTRIBUTE_COLOR , "aColor"); 
     
     gl.linkProgram(shaderProgramObject);
 
@@ -269,6 +276,15 @@ function initialize()
         1.0 , -1.0 , 0.0
     ]);
 
+    var triangleColor = new Float32Array([
+    
+        1.0 , 0.0 , 0.0 , //		glColor3f(1.0f, 0.0f, 0.0f);
+        0.0 , 1.0 , 0.0 , //		glColor3f(0.0f, 1.0f, 0.0f);
+        0.0 , 0.0 , 1.0   //		glColor3f(0.0f, 0.0f, 1.0f);
+    ]);
+
+
+
     // vao
 
     vao = gl.createVertexArray();
@@ -282,6 +298,16 @@ function initialize()
     gl.bufferData(gl.ARRAY_BUFFER , trianglePosition , gl.STATIC_DRAW);
     gl.vertexAttribPointer(vertexAttributeEnum.AMC_ATTRIBUTE_POSITION , 3 , gl.FLOAT , false , 0 , 0 );
     gl.enableVertexAttribArray(vertexAttributeEnum.AMC_ATTRIBUTE_POSITION);
+    gl.bindBuffer(gl.ARRAY_BUFFER , null);
+
+    // vbo color
+
+    vbo_color = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER , vbo_color);
+
+    gl.bufferData(gl.ARRAY_BUFFER , triangleColor , gl.STATIC_DRAW);
+    gl.vertexAttribPointer(vertexAttributeEnum.AMC_ATTRIBUTE_COLOR , 3 , gl.FLOAT , false , 0 , 0 );
+    gl.enableVertexAttribArray(vertexAttributeEnum.AMC_ATTRIBUTE_COLOR);
     gl.bindBuffer(gl.ARRAY_BUFFER , null);
 
     gl.bindVertexArray(null);

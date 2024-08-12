@@ -10,24 +10,20 @@ var canvas_original_height;
 const vertexAttributeEnum = 
 {
     AMC_ATTRIBUTE_POSITION:0,
-    AMC_ATTRIBUTE_COLOR:1
-
+    AMC_ATTRIBUTE_TEXCOORDS:1
 };
 
 var shaderProgramObject = null;
 
 var vao = null;
 var vbo = null;
-var vbo_color_triangle = null;
-
-
-var vao_rectangle = null;
-var vbo_rectangle = null;
-var vbo_color_rectangle = null;
-
+var vbo_texture = null;
 
 var mvpMatrixUniform ;
 var perspectiveProjectionMatrix;
+
+var smiley_texture ;
+var textureSamplerUniform;
 
 
 var requestAnimationFrame =
@@ -91,14 +87,14 @@ function keyDown(event)
             break;
         case 70:
         case 102:
-
             toggleFullscreen();
-
             break;
     
         default:
             break;
     }
+
+
     
 }
 
@@ -181,174 +177,149 @@ function initialize()
     // set webgl2 context's view width and view height
     gl.viewportWidth = canvas.width;
     gl.viewportHeight = canvas.height;
+
     // vertex shader
 
-    var vertexShaderSourceCode =
-        "#version 300 es" +
-        "\n" +
-        "in vec4 aPosition;" +
-        "uniform mat4 uMVPMatrix;" +
-        "in vec4 aColor;" +
-        "out vec4 oColor;" +
-        "void main(void)" +
-        "{" +
-        "gl_Position = uMVPMatrix * aPosition;" +
-        "oColor = aColor;" +
-        "}";
+    var vertexShaderSourceCode = 
+    "#version 300 es"+
+    "\n"+
+    "in vec4 aPosition;"+
+    "in vec2 aTexCoord;"+
+    "out vec2 oTexCoord;"+
+    "uniform mat4 uMVPMatrix;"+
+    "void main(void)"+
+    "{"+
+    "gl_Position = uMVPMatrix * aPosition;"+
+    "oTexCoord = aTexCoord;"+
+    "}";
 
     var vertexShaderObject = gl.createShader(gl.VERTEX_SHADER);
-    gl.shaderSource(vertexShaderObject, vertexShaderSourceCode);
+    gl.shaderSource(vertexShaderObject , vertexShaderSourceCode);
     gl.compileShader(vertexShaderObject);
 
-    if (gl.getShaderParameter(vertexShaderObject, gl.COMPILE_STATUS) == false) {
+    if(gl.getShaderParameter(vertexShaderObject , gl.COMPILE_STATUS) == false)
+    {
         var error = gl.getShaderInfoLog(vertexShaderObject);
 
-        if (error.length > 0) {
+        if(error.length > 0)
+        {
             var Log = "vertex shader compilation error : " + error;
             alert(Log);
             uninitialize();
         }
     }
-    else {
+    else
+    {
         console.log("vertex Shader Compileed Successfully !!! \n");
     }
 
-    var fragmentShaderSourceCode =
-        "#version 300 es" +
-        "\n" +
-        "precision highp float;" +
-        "in vec4 oColor;" +
-        "out vec4 FragColor;" +
-        "void main(void)" +
-        "{" +
-        "FragColor = vec4(1.0  , 1.0 , 1.0 , 1.0);" +
-        "}";
+    var fragmentShaderSourceCode = 
+    "#version 300 es"+
+    "\n"+
+    "precision highp float;"+
+    "uniform highp sampler2D uTextureSampler;"+
+    "in vec2 oTexCoord;"+
+    "out vec4 FragColor;"+
+    "void main(void)"+
+    "{"+
+    "FragColor = texture(uTextureSampler , oTexCoord);"+
+    "}";
 
     var fragmentShaderObject = gl.createShader(gl.FRAGMENT_SHADER);
-    gl.shaderSource(fragmentShaderObject, fragmentShaderSourceCode);
+    gl.shaderSource(fragmentShaderObject , fragmentShaderSourceCode);
     gl.compileShader(fragmentShaderObject);
 
-    if (gl.getShaderParameter(fragmentShaderObject, gl.COMPILE_STATUS) == false) {
+    if(gl.getShaderParameter(fragmentShaderObject , gl.COMPILE_STATUS) == false)
+    {
         var error = gl.getShaderInfoLog(fragmentShaderObject);
-        if (error.length > 0) {
+        if(error.length > 0)
+        {
             var Log = "Fragment SHader compilation error : " + error;
             alert(Log);
             uninitialize();
         }
     }
-    else {
+    else
+    {
         console.log("fragment SHader compilation Successfully !!! \n");
     }
 
     // shader Program
     shaderProgramObject = gl.createProgram();
-    gl.attachShader(shaderProgramObject, vertexShaderObject);
-    gl.attachShader(shaderProgramObject, fragmentShaderObject);
+    gl.attachShader(shaderProgramObject , vertexShaderObject);
+    gl.attachShader(shaderProgramObject , fragmentShaderObject);
 
-    gl.bindAttribLocation(shaderProgramObject, vertexAttributeEnum.AMC_ATTRIBUTE_POSITION, "aPosition");
-
+    gl.bindAttribLocation(shaderProgramObject , vertexAttributeEnum.AMC_ATTRIBUTE_POSITION , "aPosition");  
+    gl.bindAttribLocation(shaderProgramObject , vertexAttributeEnum.AMC_ATTRIBUTE_TEXCOORDS , "aTexCoord"); 
+    
     gl.linkProgram(shaderProgramObject);
 
-    if (gl.getProgramParameter(shaderProgramObject, gl.LINK_STATUS) == false) {
+    if(gl.getProgramParameter(shaderProgramObject , gl.LINK_STATUS) == false)
+    {
         var error = gl.getProgramInfoLog(shaderProgramObject);
-        if (error.length > 0) {
+        if(error.length > 0)
+        {
             var Log = "shader Program Linking Error : " + error;
             alert(Log);
             uninitialize();
         }
     }
-    else {
+    else
+    {
         console.log("ShaderProgeam Linked Successfully !!! \n");
     }
 
-    mvpMatrixUniform = gl.getUniformLocation(shaderProgramObject, "uMVPMatrix");
+    mvpMatrixUniform = gl.getUniformLocation(shaderProgramObject , "uMVPMatrix");
+    textureSamplerUniform = gl.getUniformLocation(shaderProgramObject , "uTextureSampler");
 
     // triangle attributes
 
-    var trianglePosition = new Float32Array([
-
-        0.0, 1.0, 0.0,
-        -1.0, -1.0, 0.0,
-        1.0, -1.0, 0.0
-    ]);
-
-    var triangleColor = new Float32Array([
-
-        1.0, 0.0, 0.0, //		glColor3f(1.0f, 0.0f, 0.0f);
-        0.0, 1.0, 0.0, //		glColor3f(0.0f, 1.0f, 0.0f);
-        0.0, 0.0, 1.0   //		glColor3f(0.0f, 0.0f, 1.0f);
-    ]);
-
     var rectanglePosition = new Float32Array([
+    
+		1.0, 1.0, 0.0 ,		//glVertex3f(1.0f, 1.0f, 0.0f);
+		-1.0, 1.0, 0.0 ,		//glVertex3f(-1.0f, 1.0f, 0.0f);
+		-1.0, -1.0, 0.0 ,	//glVertex3f(-1.0f, -1.0f, 0.0f);
+		1.0, -1.0, 0.0		//glVertex3f(1.0f, -1.0f, 0.0f);
+    ]);
+    var rectangleTexcoord = new Float32Array([
+    
+        1.0 , 1.0,
+        0.0 , 1.0,
+        0.0 , 0.0,
+        1.0 , 0.0
 
-        1.0, 1.0, 0.0,		//glVertex3f(1.0f, 1.0f, 0.0f);
-        -1.0, 1.0, 0.0,		//glVertex3f(-1.0f, 1.0f, 0.0f);
-        -1.0, -1.0, 0.0,	//glVertex3f(-1.0f, -1.0f, 0.0f);
-        1.0, -1.0, 0.0		//glVertex3f(1.0f, -1.0f, 0.0f);
     ]);
 
-    var rectangleColor = new Float32Array([
+    // vao
 
-        0.0, 0.0, 1.0, //		glColor3f(1.0f, 0.0f, 0.0f);
-        0.0, 0.0, 1.0, //		glColor3f(0.0f, 1.0f, 0.0f);
-        0.0, 0.0, 1.0   //		glColor3f(0.0f, 0.0f, 1.0f);
-    ]);
+    vao = gl.createVertexArray();
+    gl.bindVertexArray(vao);
 
-    // vao triangle
+    // vbo
 
-    {
-        vao = gl.createVertexArray();
-        gl.bindVertexArray(vao);
+    vbo = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER , vbo);
 
-        // vbo
+    gl.bufferData(gl.ARRAY_BUFFER , rectanglePosition , gl.STATIC_DRAW);
+    gl.vertexAttribPointer(vertexAttributeEnum.AMC_ATTRIBUTE_POSITION , 3 , gl.FLOAT , false , 0 , 0 );
+    gl.enableVertexAttribArray(vertexAttributeEnum.AMC_ATTRIBUTE_POSITION);
+    gl.bindBuffer(gl.ARRAY_BUFFER , null);
 
-        vbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+    // vbo_texture
 
-        gl.bufferData(gl.ARRAY_BUFFER, trianglePosition, gl.STATIC_DRAW);
-        gl.vertexAttribPointer(vertexAttributeEnum.AMC_ATTRIBUTE_POSITION, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(vertexAttributeEnum.AMC_ATTRIBUTE_POSITION);
-        gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    vbo_texture = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER , vbo_texture);
 
-        // vbo color
+    gl.bufferData(gl.ARRAY_BUFFER , rectangleTexcoord , gl.STATIC_DRAW);
+    gl.vertexAttribPointer(vertexAttributeEnum.AMC_ATTRIBUTE_TEXCOORDS , 2 , gl.FLOAT , false , 0 , 0 );
+    gl.enableVertexAttribArray(vertexAttributeEnum.AMC_ATTRIBUTE_TEXCOORDS);
+    gl.bindBuffer(gl.ARRAY_BUFFER , null);
 
-        vbo_color_triangle = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vbo_color_triangle);
+    gl.bindVertexArray(null);
 
-        gl.bufferData(gl.ARRAY_BUFFER, triangleColor, gl.STATIC_DRAW);
-        gl.vertexAttribPointer(vertexAttributeEnum.AMC_ATTRIBUTE_COLOR, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(vertexAttributeEnum.AMC_ATTRIBUTE_COLOR);
-        gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    loadGLTexture();
 
-        gl.bindVertexArray(null);
-    }
-
-    // vao rectangle
-
-    {
-        vao_rectangle = gl.createVertexArray();
-        gl.bindVertexArray(vao_rectangle);
-
-        // vbo
-
-        vbo_rectangle = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vbo_rectangle);
-
-        gl.bufferData(gl.ARRAY_BUFFER, rectanglePosition, gl.STATIC_DRAW);
-        gl.vertexAttribPointer(vertexAttributeEnum.AMC_ATTRIBUTE_POSITION, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(vertexAttributeEnum.AMC_ATTRIBUTE_POSITION);
-        gl.bindBuffer(gl.ARRAY_BUFFER, null);
-
-        // vbo color rec
-
-        gl.vertexAttrib3f(vertexAttributeEnum.AMC_ATTRIBUTE_COLOR, 0.0, 0.0, 1.0);
-
-
-        gl.bindVertexArray(null);
-
-    }
-
-
+    // gl.enable(gl.TEXTURE_2D);
 
     // depth initialise
     gl.clearDepth(1.0);
@@ -361,6 +332,33 @@ function initialize()
     // initialise projection matrix
 
     perspectiveProjectionMatrix = mat4.create();
+
+}
+
+function loadGLTexture()
+{
+    smiley_texture = gl.createTexture();
+
+    smiley_texture.image = new Image();
+
+    console.log("before src load !!! \n");
+
+    smiley_texture.image.src = "Smiley.png";
+
+    console.log("after src load !!! \n");
+
+    smiley_texture.image.onLoad = Function()
+    {
+        gl.bindTexture(gl.TEXTURE_2D , smiley_texture);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL , true);
+        gl.texParameteri(gl.TEXTURE_2D , gl.TEXTURE_MAG_FILTER , gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D , gl.TEXTURE_MIN_FILTER , gl.NEAREST);
+
+        gl.texImage2D(gl.TEXTURE_2D , 0 , gl.RGBA , gl.RGBA , gl.UNSIGNED_BYTE , smiley_texture.image);
+        gl.generateMipmap(gl.TEXTURE_2D);
+        gl.bindTexture(gl.TEXTURE_2D , null);   
+
+    }
 
 }
 
@@ -391,46 +389,27 @@ function display()
     // code
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    // code
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
     gl.useProgram(shaderProgramObject);
 
     // transformation
 
-    // triangle
-    {
-        var modelViewMatrix = mat4.create();
-        var modelViewProjectionMatrix = mat4.create();
+    var modelViewMatrix = mat4.create();
+    var modelViewProjectionMatrix = mat4.create();
 
-        mat4.translate(modelViewMatrix, modelViewMatrix, [-1.5, 0.0, -4.0]); // source , target , values
+    mat4.translate(modelViewMatrix , modelViewMatrix , [0.0, 0.0 , -3.0]); // source , target , values
 
-        mat4.multiply(modelViewProjectionMatrix, perspectiveProjectionMatrix, modelViewMatrix);
-        gl.uniformMatrix4fv(mvpMatrixUniform, false, modelViewProjectionMatrix);
+    mat4.multiply(modelViewProjectionMatrix , perspectiveProjectionMatrix , modelViewMatrix);
+    gl.uniformMatrix4fv(mvpMatrixUniform , false , modelViewProjectionMatrix);
 
-        gl.bindVertexArray(vao);
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
-        gl.bindVertexArray(null);
-    }
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D , smiley_texture);
+    gl.uniform1i(textureSamplerUniform , 0);
 
+    gl.bindVertexArray(vao);
 
-    // rectangle
-    {
-        modelViewMatrix = mat4.create();
-        modelViewProjectionMatrix = mat4.create();
+    gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
 
-        mat4.translate(modelViewMatrix, modelViewMatrix, [1.5, 0.0, -4.0]); // source , target , values
-
-        mat4.multiply(modelViewProjectionMatrix, perspectiveProjectionMatrix, modelViewMatrix);
-        gl.uniformMatrix4fv(mvpMatrixUniform, false, modelViewProjectionMatrix);
-
-        gl.bindVertexArray(vao_rectangle);
-
-        gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
-        gl.bindVertexArray(null);
-    }
-
-
+    gl.bindVertexArray(null);
 
     gl.useProgram(null);
 
@@ -449,15 +428,19 @@ function update()
 
 function uninitialize()
 {
+    //code
 
-    if (shaderProgramObject) {
+    if(shaderProgramObject)
+    {
         gl.useProgram(shaderProgramObject);
         var shaderObjects = gl.getAttachedShaders(shaderProgramObject);
-        if (shaderObjects && shaderObjects.length > 0) {
-            for (let i = 0; i < shaderObjects.length; i++) {
-                gl.detachShader(shaderProgramObject, shaderObjects[i]);
+        if(shaderObjects && shaderObjects.length > 0)
+        {
+            for (let i = 0; i < shaderObjects.length; i++) 
+            {
+                gl.detachShader(shaderProgramObject , shaderObjects[i]);
                 gl.deleteShader(shaderObjects[i]);
-                shaderObjects[i] = null;
+                shaderObjects[i] = null;                
             }
         }
         gl.useProgram(null);
@@ -465,11 +448,13 @@ function uninitialize()
         shaderProgramObject = null;
     }
 
-    if (vbo) {
+    if(vbo)
+    {
         gl.deleteBuffer(vbo);
         vbo = null;
     }
-    if (vao) {
+    if(vao)
+    {
         gl.deleteVertexArray(vao);
         vao = null;
     }

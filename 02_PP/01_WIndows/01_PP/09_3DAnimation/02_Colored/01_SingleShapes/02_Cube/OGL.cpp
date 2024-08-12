@@ -544,55 +544,6 @@ int initialize(void)
 
 		//get shader uniform locations
 		mvpMatrixUniform = glGetUniformLocation(shaderProgramObject, "uMVPMatrix");
-
-		//TRIANGLE
-
-		//declare position and color arrays
-		const GLfloat pyramid_position[] =
-		{
-			// front
-			0.0f, 1.0f, 0.0f,
-			-1.0f, -1.0f, 1.0f,
-			1.0f, -1.0f, 1.0f,
-
-			// right
-			0.0f, 1.0f, 0.0f,
-			1.0f, -1.0f, 1.0f,
-			1.0f, -1.0f, -1.0f,
-
-			// back
-			0.0f, 1.0f, 0.0f,
-			1.0f, -1.0f, -1.0f,
-			-1.0f, -1.0f, -1.0f,
-
-			// left
-			0.0f, 1.0f, 0.0f,
-			-1.0f, -1.0f, -1.0f,
-			-1.0f, -1.0f, 1.0f
-
-		};
-
-		const GLfloat pyramid_color[] =
-		{
-					1.0f, 0.0f, 0.0f,
-					0.0f, 1.0f, 0.0f,
-					0.0f, 0.0f, 1.0f,
-
-					1.0f, 0.0f, 0.0f,
-					0.0f, 0.0f, 1.0f,
-					0.0f, 1.0f, 0.0f,
-
-					1.0f, 0.0f, 0.0f,
-					0.0f, 1.0f, 0.0f,
-					0.0f, 0.0f, 1.0f,
-
-					1.0f, 0.0f, 0.0f,
-					0.0f, 0.0f, 1.0f,
-					0.0f, 1.0f, 0.0f
-
-		};
-
-
 		//SQUARE
 
 		//declare position and color arrays
@@ -675,50 +626,6 @@ int initialize(void)
 
 		};
 
-		//const GLfloat square_color[] =
-		//{
-		//	1.0f, 0.0f, 0.0f, //glColor3f(1.0f, 0.0f, 0.0f);
-		//	0.0f, 1.0f, 0.0f, // glColor3f(0.0f, 1.0f, 0.0f); 
-		//	0.0f, 0.0f, 1.0f  //glColor3f(0.0f, 0.0f, 1.0f); 
-
-		//}; // square la single color aahe tyamule array ne karychi garaj nahi vbo aani color array lagnar nai
-
-
-		//*********** PYRAMID ***********
-		
-		//VAO
-		//create vertex array object
-		//glGenVertexArrays(1, &vao_Pyramid);
-
-		////bind with vao
-		//glBindVertexArray(vao_Pyramid);
-
-		//// VBO for position
-		////create vertex buffer array for position
-		//glGenBuffers(1, &vbo_position_pyramid);
-
-		////bind with vbo of position
-		//glBindBuffer(GL_ARRAY_BUFFER, vbo_position_pyramid);
-
-		//glBufferData(GL_ARRAY_BUFFER, sizeof(pyramid_position), pyramid_position, GL_STATIC_DRAW);
-
-		//glVertexAttribPointer(AMC_ATTRIBUTE_POSITION, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
-		//glEnableVertexAttribArray(AMC_ATTRIBUTE_POSITION);
-
-		////unbind with vbo of positin
-		//glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-		//REPEAT vbo position steps for vbo color
-		//vbo for color
-		glGenBuffers(1, &vbo_color_pyramid);
-		glBindBuffer(GL_ARRAY_BUFFER, vbo_color_pyramid);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(pyramid_color), pyramid_color, GL_STATIC_DRAW);
-		glVertexAttribPointer(AMC_ATTRIBUTE_COLOR, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-		glEnableVertexAttribArray(AMC_ATTRIBUTE_COLOR);
-
-		//UNBIND WITH VAO
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 
 		//CUBE
@@ -824,31 +731,11 @@ void display(void)
 
 	glUseProgram(shaderProgramObject);
 	
-	//PYRAMID
-	mat4 modelViewMatrix = mat4::identity();
-	mat4 translationMatrix = mat4::identity();			translationMatrix = vmath::translate(-1.5f, 0.0f, -6.0f);
-	mat4 rotationMatrix = mat4::identity();
-	rotationMatrix = vmath::rotate(angle_pyramid, 0.0f, 1.0f, 0.0f);
-	modelViewMatrix = translationMatrix * rotationMatrix;
-
-	mat4 modelViewProjectionMatrix = perspectiveProjectionMatrix * modelViewMatrix; //matrix mdhe multiplication la commutitive property that is a*b != b*a in matrices
-
-	//push above mvp into vertex shader's mvpUniform
-	glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, modelViewProjectionMatrix);
-
-	glBindVertexArray(vao_Pyramid);
-
-	//draw geometry / model / scenes
-	glDrawArrays(GL_TRIANGLES, 0, 12);
-	glBindVertexArray(0);
-
-
-
-
+	
 	//CUBE
-	modelViewMatrix = mat4::identity();
-	translationMatrix = mat4::identity();
-	translationMatrix = vmath::translate(1.5f, 0.0f, -6.0f);
+	mat4 modelViewMatrix = mat4::identity();
+	mat4 translationMatrix = mat4::identity();
+	translationMatrix = vmath::translate(0.0f, 0.0f, -6.0f);
 	mat4 scaleMatrix = mat4::identity();
 	scaleMatrix = vmath::scale(0.86f, 0.86f, 0.86f);
 	// x rot
@@ -861,10 +748,10 @@ void display(void)
 	mat4 rotationMatrix3 = mat4::identity();
 	rotationMatrix3 = vmath::rotate(angle_cube, 0.0f, 0.0f, 1.0f);
 
-	rotationMatrix = rotationMatrix1 * rotationMatrix2 * rotationMatrix3;
+	mat4 rotationMatrix = rotationMatrix1 * rotationMatrix2 * rotationMatrix3;
 
 	modelViewMatrix = translationMatrix * scaleMatrix * rotationMatrix;
-	modelViewProjectionMatrix = perspectiveProjectionMatrix * modelViewMatrix; //matrix mdhe multiplication la commutitive property that is a*b != b*a in matrices
+	mat4 modelViewProjectionMatrix = perspectiveProjectionMatrix * modelViewMatrix; //matrix mdhe multiplication la commutitive property that is a*b != b*a in matrices
 	//push above mvp into vertex shader's mvpUniform
 	glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, modelViewProjectionMatrix);
 

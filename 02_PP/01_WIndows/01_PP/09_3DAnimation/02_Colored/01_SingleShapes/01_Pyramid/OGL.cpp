@@ -593,97 +593,6 @@ int initialize(void)
 		};
 
 
-		//SQUARE
-
-		//declare position and color arrays
-		const GLfloat cube_position[] =
-		{
-		
-				// top
-				1.0f, 1.0f, -1.0f,
-				-1.0f, 1.0f, -1.0f,
-				-1.0f, 1.0f, 1.0f,
-				1.0f, 1.0f, 1.0f,
-
-				// bottom
-				1.0f, -1.0f, -1.0f,
-				-1.0f, -1.0f, -1.0f,
-				-1.0f, -1.0f,  1.0f,
-				1.0f, -1.0f,  1.0f,
-
-				// front
-				1.0f, 1.0f, 1.0f,
-				-1.0f, 1.0f, 1.0f,
-				-1.0f, -1.0f, 1.0f,
-				1.0f, -1.0f, 1.0f,
-
-				// back
-				1.0f, 1.0f, -1.0f,
-				-1.0f, 1.0f, -1.0f,
-				-1.0f, -1.0f, -1.0f,
-				1.0f, -1.0f, -1.0f,
-
-				// right
-				1.0f, 1.0f, -1.0f,
-				1.0f, 1.0f, 1.0f,
-				1.0f, -1.0f, 1.0f,
-				1.0f, -1.0f, -1.0f,
-
-				// left
-				-1.0f, 1.0f, 1.0f,
-				-1.0f, 1.0f, -1.0f,
-				-1.0f, -1.0f, -1.0f,
-				-1.0f, -1.0f, 1.0f,
-
-
-
-		
-		};
-
-		const GLfloat cube_color[]
-		{
-				0.0f, 1.0f, 0.0f,
-				0.0f, 1.0f, 0.0f,
-				0.0f, 1.0f, 0.0f,
-				0.0f, 1.0f, 0.0f,
-
-				1.0f, 0.5f, 0.0f,
-				1.0f, 0.5f, 0.0f,
-				1.0f, 0.5f, 0.0f,
-				1.0f, 0.5f, 0.0f,
-
-				1.0f, 0.0f, 0.0f,
-				1.0f, 0.0f, 0.0f,
-				1.0f, 0.0f, 0.0f,
-				1.0f, 0.0f, 0.0f,
-
-				1.0f, 1.0f, 0.0f,
-				1.0f, 1.0f, 0.0f,
-				1.0f, 1.0f, 0.0f,
-				1.0f, 1.0f, 0.0f,
-
-				0.0f, 0.0f, 1.0f,
-				0.0f, 0.0f, 1.0f,
-				0.0f, 0.0f, 1.0f,
-				0.0f, 0.0f, 1.0f,
-
-				1.0f, 0.0f, 1.0f,
-				1.0f, 0.0f, 1.0f,
-				1.0f, 0.0f, 1.0f,
-				1.0f, 0.0f, 1.0f
-
-
-		};
-
-		//const GLfloat square_color[] =
-		//{
-		//	1.0f, 0.0f, 0.0f, //glColor3f(1.0f, 0.0f, 0.0f);
-		//	0.0f, 1.0f, 0.0f, // glColor3f(0.0f, 1.0f, 0.0f); 
-		//	0.0f, 0.0f, 1.0f  //glColor3f(0.0f, 0.0f, 1.0f); 
-
-		//}; // square la single color aahe tyamule array ne karychi garaj nahi vbo aani color array lagnar nai
-
-
 		//*********** PYRAMID ***********
 		
 		//VAO
@@ -721,39 +630,6 @@ int initialize(void)
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 
-		//CUBE
-		//VAO
-		//create vertex array object
-		glGenVertexArrays(1, &vao_Cube);
-
-		//bind with vao
-		glBindVertexArray(vao_Cube);
-
-		// VBO for position
-		//create vertex buffer array for position
-		glGenBuffers(1, &vbo_position_cube);
-
-		//bind with vbo of position
-		glBindBuffer(GL_ARRAY_BUFFER, vbo_position_cube);
-
-		glBufferData(GL_ARRAY_BUFFER, sizeof(cube_position), cube_position, GL_STATIC_DRAW);
-
-		glVertexAttribPointer(AMC_ATTRIBUTE_POSITION, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
-		glEnableVertexAttribArray(AMC_ATTRIBUTE_POSITION);
-
-		//unbind with vbo of positin
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-		//VBO for color // single color asel tr vbo krychi garaj nahi
-		glGenBuffers(1, &vbo_color_cube);
-		glBindBuffer(GL_ARRAY_BUFFER, vbo_color_cube);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(cube_color), cube_color, GL_STATIC_DRAW);
-		glVertexAttribPointer(AMC_ATTRIBUTE_COLOR, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-		glEnableVertexAttribArray(AMC_ATTRIBUTE_COLOR);
-
-		//UNBIND WITH VAO
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 
 
@@ -826,7 +702,7 @@ void display(void)
 	
 	//PYRAMID
 	mat4 modelViewMatrix = mat4::identity();
-	mat4 translationMatrix = mat4::identity();			translationMatrix = vmath::translate(-1.5f, 0.0f, -6.0f);
+	mat4 translationMatrix = mat4::identity();			translationMatrix = vmath::translate(0.0f, 0.0f, -4.0f);
 	mat4 rotationMatrix = mat4::identity();
 	rotationMatrix = vmath::rotate(angle_pyramid, 0.0f, 1.0f, 0.0f);
 	modelViewMatrix = translationMatrix * rotationMatrix;
@@ -840,43 +716,6 @@ void display(void)
 
 	//draw geometry / model / scenes
 	glDrawArrays(GL_TRIANGLES, 0, 12);
-	glBindVertexArray(0);
-
-
-
-
-	//CUBE
-	modelViewMatrix = mat4::identity();
-	translationMatrix = mat4::identity();
-	translationMatrix = vmath::translate(1.5f, 0.0f, -6.0f);
-	mat4 scaleMatrix = mat4::identity();
-	scaleMatrix = vmath::scale(0.86f, 0.86f, 0.86f);
-	// x rot
-	mat4 rotationMatrix1 = mat4::identity();
-	rotationMatrix1 = vmath::rotate(angle_cube, 1.0f, 0.0f, 0.0f);
-	// y rot
-	mat4 rotationMatrix2 = mat4::identity();
-	rotationMatrix2 = vmath::rotate(angle_cube, 0.0f, 1.0f, 0.0f);
-	// z rot
-	mat4 rotationMatrix3 = mat4::identity();
-	rotationMatrix3 = vmath::rotate(angle_cube, 0.0f, 0.0f, 1.0f);
-
-	rotationMatrix = rotationMatrix1 * rotationMatrix2 * rotationMatrix3;
-
-	modelViewMatrix = translationMatrix * scaleMatrix * rotationMatrix;
-	modelViewProjectionMatrix = perspectiveProjectionMatrix * modelViewMatrix; //matrix mdhe multiplication la commutitive property that is a*b != b*a in matrices
-	//push above mvp into vertex shader's mvpUniform
-	glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, modelViewProjectionMatrix);
-
-	glBindVertexArray(vao_Cube);
-
-	//draw geometry / model / scenes
-	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-	glDrawArrays(GL_TRIANGLE_FAN, 4, 4);
-	glDrawArrays(GL_TRIANGLE_FAN, 8, 4);
-	glDrawArrays(GL_TRIANGLE_FAN, 12, 4);
-	glDrawArrays(GL_TRIANGLE_FAN, 16, 4);
-	glDrawArrays(GL_TRIANGLE_FAN, 20, 4);
 	glBindVertexArray(0);
 
 	glUseProgram(0);

@@ -12,10 +12,10 @@
 #include<gl/GL.h>
 #include"vmath.h" //our own math file
 using namespace vmath;
+//namespace is like a structure
 
 
 // MACROS
-
 #define WIN_WIDTH 800
 #define WIN_HEIGHT 600
 
@@ -47,25 +47,23 @@ GLuint shaderProgramObject = 0;
 
 enum
 {
-	AMC_ATTRIBUTE_POSITION = 0,
-	AMC_ATTRIBUTE_COLOR 
+	AMC_ATTRIBUTE_POSITION = 0
 
 };
-GLfloat angle_pyramid = 0.0f;
-GLfloat angle_cube = 0.0f;
-GLuint vao_Pyramid = 0;
-GLuint vbo_position_pyramid = 0;
-GLuint vbo_color_pyramid = 0;
 
-GLuint vao_Cube = 0;
-GLuint vbo_position_cube = 0;
-GLuint vbo_color_cube = 0;
+GLuint vao = 0;
+GLuint vbo_position = 0;
 
 GLuint mvpMatrixUniform = 0;
-
 mat4 perspectiveProjectionMatrix = 0;
-//mat4 -> 4 by 4 cha matrix -> is in vmath.h
 
+//for tesselation shaders
+GLuint numberOfSegmentsUniform;
+GLuint numberOfStripsUniform;
+GLuint lineColorUniform;
+unsigned int uiNumberOfLineSegments = 0;
+
+//mat4 -> 4 by 4 cha matrix -> is in vmath.h
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCnmdLine, int iCmdShow) // function defition
 {
@@ -233,6 +231,20 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case VK_ESCAPE:
 			DestroyWindow(hwnd);
 			break;
+
+		case VK_UP:
+			uiNumberOfLineSegments++;
+			if (uiNumberOfLineSegments >= 30)
+			{
+				uiNumberOfLineSegments = 30;
+			}
+			break;
+		case VK_DOWN:
+			uiNumberOfLineSegments--;
+			if (uiNumberOfLineSegments <= 0)
+			{
+				uiNumberOfLineSegments = 1;
+			}
 		}
 		break;
 
@@ -400,14 +412,10 @@ int initialize(void)
 	const GLchar* vertexShaderSourceCode =
 		"#version 460 core" \
 		"\n" \
-		"in vec4 aPosition;" \
-		"in vec4 aColor;" \
-		"out vec4 oColor;" \
-		"uniform mat4 uMVPMatrix;" \
+		"in vec2 aPosition;" \
 		"void main(void)" \
 		"{" \
-		"gl_Position = uMVPMatrix * aPosition;" \
-		"oColor = aColor;" \
+		"gl_Position = vec4(aPosition, 0.0, 1.0);" \
 		"}";
 
 
@@ -458,17 +466,108 @@ int initialize(void)
 			uninitialized();
 		}
 
+		//--------- Tesselation Control Shader ----------------
+		const GLchar* tesselationControlShaderSourceCode =
+			"#version 460 core" \
+			"\n" \
+			"layout(vertices=4) out;" \
+			"uniform int uNumberOfSegments;" \
+			"uniform int uNumberOfStrips;" \
+			"void main(void)" \
+			"{" \
+			"gl_out[gl_InvocationID].gl_Position=gl_in[gl_InvocationID].gl_Position;" \
+			"gl_TessLevelOuter[0]=float(uNumberOfStrips);" \
+			"gl_TessLevelOuter[1]=float(uNumberOfSegments);" \
+			"}";
+
+		GLuint tesselationControlShaderObject = glCreateShader(GL_TESS_CONTROL_SHADER);
+
+		glShaderSource(tesselationControlShaderObject, 1, (const GLchar**)&tesselationControlShaderSourceCode, NULL);
+
+		glCompileShader(tesselationControlShaderObject);
+
+
+		//for enabling shader 
+		status = 0;
+		infoLogLength = 0;
+		szInfoLog = NULL;
+
+		glGetShaderiv(tesselationControlShaderObject, GL_COMPILE_STATUS, &status);
+		if (status == FALSE)
+		{
+			glGetShaderiv(tesselationControlShaderObject, GL_INFO_LOG_LENGTH, &infoLogLength);
+			if (infoLogLength > 0)
+			{
+				szInfoLog = (GLchar*)malloc(infoLogLength);
+				if (szInfoLog != NULL)
+				{
+					glGetShaderInfoLog(tesselationControlShaderObject, infoLogLength, NULL, szInfoLog);
+					fprintf(gpFile, "TesselationControl Shader Object Compilation Log: %s\n", szInfoLog);
+					free(szInfoLog);
+					szInfoLog = NULL;
+				}
+			}
+			uninitialized();
+		}
+
+		//--------- Tesselation Control Shader 2----------------
+		const GLchar* tesselationEvaluationShaderSourceCode =
+			"#version 460 core" \
+			"\n" \
+			"layout(isolines) in;" \
+			"uniform mat4 uMVPMatrix;" \
+			"void main(void)" \
+			"{" \
+			"vec3 p0=gl_in[0].gl_Position.xyz;" \
+			"vec3 p1=gl_in[1].gl_Position.xyz;" \
+			"vec3 p2=gl_in[2].gl_Position.xyz;" \
+			"vec3 p3=gl_in[3].gl_Position.xyz;" \
+			"vec3 p=p0*(1-gl_TessCoord.x)*(1-gl_TessCoord.x)*(1-gl_TessCoord.x)+p1*3.0*gl_TessCoord.x*(1-gl_TessCoord.x)*(1-gl_TessCoord.x)+p2*3.0*gl_TessCoord.x*gl_TessCoord.x*(1-gl_TessCoord.x)+p3*gl_TessCoord.x*gl_TessCoord.x*gl_TessCoord.x;" \
+			"gl_Position=uMVPMatrix*vec4(p,1.0);" \
+			"}";
+
+		GLuint tesselationEvaluationShaderObject = glCreateShader(GL_TESS_EVALUATION_SHADER);
+
+		glShaderSource(tesselationEvaluationShaderObject, 1, (const GLchar**)&tesselationEvaluationShaderSourceCode, NULL);
+
+		glCompileShader(tesselationEvaluationShaderObject);
+
+
+		//for enabling shader 
+		status = 0;
+		infoLogLength = 0;
+		szInfoLog = NULL;
+
+		glGetShaderiv(tesselationEvaluationShaderObject, GL_COMPILE_STATUS, &status);
+		if (status == FALSE)
+		{
+			glGetShaderiv(tesselationEvaluationShaderObject, GL_INFO_LOG_LENGTH, &infoLogLength);
+			if (infoLogLength > 0)
+			{
+				szInfoLog = (GLchar*)malloc(infoLogLength);
+				if (szInfoLog != NULL)
+				{
+					glGetShaderInfoLog(tesselationEvaluationShaderObject, infoLogLength, NULL, szInfoLog);
+					fprintf(gpFile, "Tesselation Evaluation Shader Object Compilation Log: %%s\n", szInfoLog);
+					free(szInfoLog);
+					szInfoLog = NULL;
+				}
+			}
+			uninitialized();
+		}
+
+		//3
 
 		// FRAGMENT SHADER
-
+		// when you use data type as functions called as constructor vec4
 		const GLchar* fragmentShaderSourceCode =
 			"#version 460 core" \
 			"\n" \
-			"in vec4 oColor;" \
+			"uniform vec4 uLineColor;" \
 			"out vec4 FragColor;" \
 			"void main(void)" \
 			"{" \
-			"FragColor = vec4(1.0, 1.0, 1.0, 1.0);" \
+			"FragColor = uLineColor;" \
 			"}";
 
 		GLuint fragmentShaderObject = glCreateShader(GL_FRAGMENT_SHADER);
@@ -493,7 +592,7 @@ int initialize(void)
 				if (szInfoLog != NULL)
 				{
 					glGetShaderInfoLog(fragmentShaderObject, infoLogLength, NULL, szInfoLog);
-					fprintf(gpFile, "Fragment Shader Compilation Log: \n", szInfoLog);
+					fprintf(gpFile, "Fragment Shader Compilation Log: %s\n", szInfoLog);
 					free(szInfoLog);
 					szInfoLog =NULL;
 				}
@@ -505,15 +604,15 @@ int initialize(void)
 		// create shader program object
 		shaderProgramObject = glCreateProgram();
 
-		// attach both shader to this program
+		// attach all shaders to this program
 		glAttachShader(shaderProgramObject, vertexShaderObject);
+		glAttachShader(shaderProgramObject, tesselationControlShaderObject);
+		glAttachShader(shaderProgramObject, tesselationEvaluationShaderObject);
 		glAttachShader(shaderProgramObject, fragmentShaderObject);
 
 		//bind Attribute location with the shader program object
 
 		glBindAttribLocation(shaderProgramObject, AMC_ATTRIBUTE_POSITION, "aPosition");
-
-		glBindAttribLocation(shaderProgramObject, AMC_ATTRIBUTE_COLOR, "aColor");
 
 		//link the shader program
 		glLinkProgram(shaderProgramObject);
@@ -544,216 +643,45 @@ int initialize(void)
 
 		//get shader uniform locations
 		mvpMatrixUniform = glGetUniformLocation(shaderProgramObject, "uMVPMatrix");
-
-		//TRIANGLE
-
-		//declare position and color arrays
-		const GLfloat pyramid_position[] =
-		{
-			// front
-			0.0f, 1.0f, 0.0f,
-			-1.0f, -1.0f, 1.0f,
-			1.0f, -1.0f, 1.0f,
-
-			// right
-			0.0f, 1.0f, 0.0f,
-			1.0f, -1.0f, 1.0f,
-			1.0f, -1.0f, -1.0f,
-
-			// back
-			0.0f, 1.0f, 0.0f,
-			1.0f, -1.0f, -1.0f,
-			-1.0f, -1.0f, -1.0f,
-
-			// left
-			0.0f, 1.0f, 0.0f,
-			-1.0f, -1.0f, -1.0f,
-			-1.0f, -1.0f, 1.0f
-
-		};
-
-		const GLfloat pyramid_color[] =
-		{
-					1.1f, 1.1f, 1.1f,
-					1.1f, 1.1f, 1.1f,
-					1.1f, 1.1f, 1.1f,
-
-					1.1f, 1.1f, 1.1f,
-					1.1f, 1.1f, 1.1f,
-					1.1f, 1.1f, 1.1f,
-
-					1.1f, 1.1f, 1.1f,
-					1.1f, 1.1f, 1.1f,
-					1.1f, 1.1f, 1.1f,
-
-					1.1f, 1.1f, 1.1f,
-					1.1f, 1.1f, 1.1f,
-					1.1f, 1.1f, 1.1f
-
-		};
-
-
-		//SQUARE
+		numberOfSegmentsUniform = glGetUniformLocation(shaderProgramObject, "uNumberOfSegments");
+		numberOfStripsUniform = glGetUniformLocation(shaderProgramObject, "uNumberOfStrips");
+		lineColorUniform = glGetUniformLocation(shaderProgramObject, "uLineColor");
 
 		//declare position and color arrays
-		const GLfloat cube_position[] =
+		const GLfloat point_position[] =
 		{
-		
-				// top
-				1.0f, 1.0f, -1.0f,
-				-1.0f, 1.0f, -1.0f,
-				-1.0f, 1.0f, 1.0f,
-				1.0f, 1.0f, 1.0f,
-
-				// bottom
-				1.0f, -1.0f, -1.0f,
-				-1.0f, -1.0f, -1.0f,
-				-1.0f, -1.0f,  1.0f,
-				1.0f, -1.0f,  1.0f,
-
-				// front
-				1.0f, 1.0f, 1.0f,
-				-1.0f, 1.0f, 1.0f,
-				-1.0f, -1.0f, 1.0f,
-				1.0f, -1.0f, 1.0f,
-
-				// back
-				1.0f, 1.0f, -1.0f,
-				-1.0f, 1.0f, -1.0f,
-				-1.0f, -1.0f, -1.0f,
-				1.0f, -1.0f, -1.0f,
-
-				// right
-				1.0f, 1.0f, -1.0f,
-				1.0f, 1.0f, 1.0f,
-				1.0f, -1.0f, 1.0f,
-				1.0f, -1.0f, -1.0f,
-
-				// left
-				-1.0f, 1.0f, 1.0f,
-				-1.0f, 1.0f, -1.0f,
-				-1.0f, -1.0f, -1.0f,
-				-1.0f, -1.0f, 1.0f,
-
-
-
-		
+			-1.0, -1.0, //3rd quadrant
+			-0.5, 1.0, //2nd ...
+			 0.5, -1.0, //4th ...
+			 1.0, 1.0 // 1st ...
 		};
 
-		const GLfloat cube_color[]
-		{
-				1.0f, 1.0f, 1.0f,
-				1.0f, 1.0f, 1.0f,
-				1.0f, 1.0f, 1.0f,
-				1.0f, 1.0f, 1.0f,
-
-				1.0f, 1.0f, 1.0f,
-				1.0f, 1.0f, 1.0f,
-				1.0f, 1.0f, 1.0f,
-				1.0f, 1.0f, 1.0f,
-
-				1.0f, 1.0f, 1.0f,
-				1.0f, 1.0f, 1.0f,
-				1.0f, 1.0f, 1.0f,
-				1.0f, 1.0f, 1.0f,
-
-				1.0f, 1.0f, 1.0f,
-				1.0f, 1.0f, 1.0f,
-				1.0f, 1.0f, 1.0f,
-				1.0f, 1.0f, 1.0f,
-
-				1.0f, 1.0f, 1.0f,
-				1.0f, 1.0f, 1.0f,
-				1.0f, 1.0f, 1.0f,
-				1.0f, 1.0f, 1.0f,
-
-				1.0f, 1.0f, 1.0f,
-				1.0f, 1.0f, 1.0f,
-				1.0f, 1.0f, 1.0f,
-				1.0f, 1.0f, 1.0f
-
-
-		};
-
-		//const GLfloat square_color[] =
-		//{
-		//	1.0f, 0.0f, 0.0f, //glColor3f(1.0f, 0.0f, 0.0f);
-		//	0.0f, 1.0f, 0.0f, // glColor3f(0.0f, 1.0f, 0.0f); 
-		//	0.0f, 0.0f, 1.0f  //glColor3f(0.0f, 0.0f, 1.0f); 
-
-		//}; // square la single color aahe tyamule array ne karychi garaj nahi vbo aani color array lagnar nai
-
-
-		//*********** PYRAMID ***********
-		
 		//VAO
 		//create vertex array object
-		glGenVertexArrays(1, &vao_Pyramid);
+		glGenVertexArrays(1, &vao);
 
 		//bind with vao
-		glBindVertexArray(vao_Pyramid);
+		glBindVertexArray(vao);
 
 		// VBO for position
 		//create vertex buffer array for position
-		glGenBuffers(1, &vbo_position_pyramid);
+		glGenBuffers(1, &vbo_position);
 
 		//bind with vbo of position
-		glBindBuffer(GL_ARRAY_BUFFER, vbo_position_pyramid);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo_position);
 
-		glBufferData(GL_ARRAY_BUFFER, sizeof(pyramid_position), pyramid_position, GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(point_position), point_position, GL_STATIC_DRAW);
 
-		glVertexAttribPointer(AMC_ATTRIBUTE_POSITION, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+		glVertexAttribPointer(AMC_ATTRIBUTE_POSITION, 2, GL_FLOAT, GL_FALSE, 0, NULL);
 
 		glEnableVertexAttribArray(AMC_ATTRIBUTE_POSITION);
 
 		//unbind with vbo of positin
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-		//REPEAT vbo position steps for vbo color
-		//vbo for color
-		glGenBuffers(1, &vbo_color_pyramid);
-		glBindBuffer(GL_ARRAY_BUFFER, vbo_color_pyramid);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(pyramid_color), pyramid_color, GL_STATIC_DRAW);
-		glVertexAttribPointer(AMC_ATTRIBUTE_COLOR, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-		glEnableVertexAttribArray(AMC_ATTRIBUTE_COLOR);
-
 		//UNBIND WITH VAO
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 
-		//CUBE
-		//VAO
-		//create vertex array object
-		glGenVertexArrays(1, &vao_Cube);
-
-		//bind with vao
-		glBindVertexArray(vao_Cube);
-
-		// VBO for position
-		//create vertex buffer array for position
-		glGenBuffers(1, &vbo_position_cube);
-
-		//bind with vbo of position
-		glBindBuffer(GL_ARRAY_BUFFER, vbo_position_cube);
-
-		glBufferData(GL_ARRAY_BUFFER, sizeof(cube_position), cube_position, GL_STATIC_DRAW);
-
-		glVertexAttribPointer(AMC_ATTRIBUTE_POSITION, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
-		glEnableVertexAttribArray(AMC_ATTRIBUTE_POSITION);
-
-		//unbind with vbo of positin
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-		//VBO for color // single color asel tr vbo krychi garaj nahi
-		glGenBuffers(1, &vbo_color_cube);
-		glBindBuffer(GL_ARRAY_BUFFER, vbo_color_cube);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(cube_color), cube_color, GL_STATIC_DRAW);
-		glVertexAttribPointer(AMC_ATTRIBUTE_COLOR, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-		glEnableVertexAttribArray(AMC_ATTRIBUTE_COLOR);
-
-		//UNBIND WITH VAO
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 
 
@@ -765,14 +693,14 @@ int initialize(void)
 	// set the clear colour of window to blue
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	// Here OpenGL starts.....
+
+	uiNumberOfLineSegments = 1; //for one line in output
 
 	//initialize orthographic projection matrix
 	perspectiveProjectionMatrix = vmath::mat4::identity();
 
-
-	// Here OpenGL starts.....
 	resize(WIN_WIDTH, WIN_HEIGHT);
-
 	return 0;
 }
 
@@ -809,7 +737,6 @@ void resize(int width, int height)
 
 	//set orthographic projection matrix
 	perspectiveProjectionMatrix = vmath::perspective(45.0f, (GLfloat)width / (GLfloat)height, 0.1f, 100.f);
-
 }
 
 void display(void)
@@ -823,64 +750,35 @@ void display(void)
 	// 2. bind with vao
 
 	glUseProgram(shaderProgramObject);
-	
-	//PYRAMID
-	mat4 modelViewMatrix = mat4::identity();
-	mat4 translationMatrix = mat4::identity();			translationMatrix = vmath::translate(-1.5f, 0.0f, -6.0f);
-	mat4 rotationMatrix = mat4::identity();
-	rotationMatrix = vmath::rotate(angle_pyramid, 0.0f, 1.0f, 0.0f);
-	modelViewMatrix = translationMatrix * rotationMatrix;
 
+	//Transformation
+	mat4 modelViewMatrix = vmath::translate(0.0f, 0.0f, -3.0f);
 	mat4 modelViewProjectionMatrix = perspectiveProjectionMatrix * modelViewMatrix; //matrix mdhe multiplication la commutitive property that is a*b != b*a in matrices
 
 	//push above mvp into vertex shader's mvpUniform
 	glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, modelViewProjectionMatrix);
-
-	glBindVertexArray(vao_Pyramid);
-
-	//draw geometry / model / scenes
-	glDrawArrays(GL_TRIANGLES, 0, 12);
-	glBindVertexArray(0);
+	glUniform1i(numberOfSegmentsUniform, uiNumberOfLineSegments);
+	glUniform1i(numberOfStripsUniform, 1);
+	glUniform4fv(lineColorUniform, 1, vmath::vec4(1.0, 1.0, 0.0, 1.0));
 
 
+	//display changing number of seggments in windows title bar 
+	TCHAR str[255];
+	wsprintf(str, TEXT("Vaishnavi Bhave [Number Of Line Segments = %d]"), uiNumberOfLineSegments);
+	SetWindowText(ghwnd, str);
 
 
-	//CUBE
-	modelViewMatrix = mat4::identity();
-	translationMatrix = mat4::identity();
-	translationMatrix = vmath::translate(1.5f, 0.0f, -6.0f);
-	mat4 scaleMatrix = mat4::identity();
-	scaleMatrix = vmath::scale(0.86f, 0.86f, 0.86f);
-	// x rot
-	mat4 rotationMatrix1 = mat4::identity();
-	rotationMatrix1 = vmath::rotate(angle_cube, 1.0f, 0.0f, 0.0f);
-	// y rot
-	mat4 rotationMatrix2 = mat4::identity();
-	rotationMatrix2 = vmath::rotate(angle_cube, 0.0f, 1.0f, 0.0f);
-	// z rot
-	mat4 rotationMatrix3 = mat4::identity();
-	rotationMatrix3 = vmath::rotate(angle_cube, 0.0f, 0.0f, 1.0f);
 
-	rotationMatrix = rotationMatrix1 * rotationMatrix2 * rotationMatrix3;
+	//tell opengl by how many vertices your one patch is created 
+	glPatchParameteri(GL_PATCH_VERTICES, 4);
 
-	modelViewMatrix = translationMatrix * scaleMatrix * rotationMatrix;
-	modelViewProjectionMatrix = perspectiveProjectionMatrix * modelViewMatrix; //matrix mdhe multiplication la commutitive property that is a*b != b*a in matrices
-	//push above mvp into vertex shader's mvpUniform
-	glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, modelViewProjectionMatrix);
-
-	glBindVertexArray(vao_Cube);
+	glBindVertexArray(vao);
 
 	//draw geometry / model / scenes
-	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-	glDrawArrays(GL_TRIANGLE_FAN, 4, 4);
-	glDrawArrays(GL_TRIANGLE_FAN, 8, 4);
-	glDrawArrays(GL_TRIANGLE_FAN, 12, 4);
-	glDrawArrays(GL_TRIANGLE_FAN, 16, 4);
-	glDrawArrays(GL_TRIANGLE_FAN, 20, 4);
+	glDrawArrays(GL_PATCHES, 0, 4);
 	glBindVertexArray(0);
-
 	glUseProgram(0);
-	
+
 
 	SwapBuffers(ghdc);
 
@@ -889,15 +787,7 @@ void display(void)
 void update(void)
 {
 	// Code
-	angle_pyramid = angle_pyramid + 0.09f;
-	if (angle_pyramid >= 360.0f) {
-		angle_pyramid = angle_pyramid - 360.0f;
-	}
 
-	angle_cube = angle_cube - 0.09f;
-	if (angle_cube <= 0.0f) {
-		angle_cube = angle_cube + 360.0f;
-	}
 }
 
 void uninitialized(void)
@@ -949,43 +839,18 @@ void uninitialized(void)
 	//delete vbo for color and position
 	// delete vao 
 
-	if (vbo_color_pyramid)
-	{
-		glDeleteBuffers(1, &vbo_color_pyramid);
-		vbo_color_pyramid = 0;
-	}
 
 	//delete vbo pos
-	if (vbo_position_pyramid)
+	if (vbo_position)
 	{
-		glDeleteBuffers(1, &vbo_position_pyramid);
-		vbo_position_pyramid = 0;
+		glDeleteBuffers(1, &vbo_position);
+		vbo_position = 0;
 	}
 
-	if (vao_Pyramid)
+	if (vao)
 	{
-		glDeleteVertexArrays(1, &vao_Pyramid);
-		vao_Pyramid = 0;
-	}
-
-
-	//delete vbo pos
-	if (vbo_color_cube)
-	{
-		glDeleteBuffers(1, &vbo_color_cube);
-		vbo_color_cube = 0;
-	}
-
-	if (vbo_position_cube)
-	{
-		glDeleteBuffers(1, &vbo_position_cube);
-		vbo_position_cube = 0;
-	}
-
-	if (vao_Cube)
-	{
-		glDeleteVertexArrays(1, &vao_Cube);
-		vao_Cube = 0;
+		glDeleteVertexArrays(1, &vao);
+		vao = 0;
 	}
 
 

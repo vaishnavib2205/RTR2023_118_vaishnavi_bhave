@@ -824,32 +824,12 @@ void display(void)
 
 	glUseProgram(shaderProgramObject);
 	
-	//PYRAMID
-	//mat4 modelViewMatrix = mat4::identity();
-	//mat4 translationMatrix = mat4::identity();			translationMatrix = vmath::translate(-1.5f, 0.0f, -6.0f);
-	//mat4 rotationMatrix = mat4::identity();
-	//rotationMatrix = vmath::rotate(angle_pyramid, 0.0f, 1.0f, 0.0f);
-	//modelViewMatrix = translationMatrix * rotationMatrix;
-
-	//mat4 modelViewProjectionMatrix = perspectiveProjectionMatrix * modelViewMatrix; //matrix mdhe multiplication la commutitive property that is a*b != b*a in matrices
-
-	////push above mvp into vertex shader's mvpUniform
-	//glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, modelViewProjectionMatrix);
-
-	//glBindVertexArray(vao_Pyramid);
-
-	////draw geometry / model / scenes
-	//glDrawArrays(GL_TRIANGLES, 0, 12);
-	//glBindVertexArray(0);
-
-
-
 
 	//CUBE
 	mat4 modelViewMatrix = mat4::identity();
 
 	mat4 translationMatrix = mat4::identity();
-	translationMatrix = vmath::translate(1.5f, 0.0f, -6.0f);
+	translationMatrix = vmath::translate(0.0f, 0.0f, -6.0f);
 
 
 	mat4 scaleMatrix = mat4::identity();

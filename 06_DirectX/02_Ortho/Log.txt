@@ -1,0 +1,2 @@
+Program started successfully 
+HARDWARE Found !!!11.0 Feature Level Found !!!CreateRenderTargetView is Success !!!Resize is Success !!!Initialize is Success !!!Log File Is Successfully Closed !!!

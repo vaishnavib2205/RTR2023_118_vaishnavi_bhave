@@ -1,0 +1,60 @@
+{
+  "buildCommand" : {
+    "command" : "prepareForIndexing",
+    "enableIndexBuildArena" : true,
+    "targets" : null
+  },
+  "configuredTargets" : [
+    {
+      "guid" : "7b1a011f9adbbf60586688f317189e7df198cd66f3c137bf2b11815f4c557862"
+    }
+  ],
+  "containerPath" : "/Users/prasadbhalkikar/Documents/MyProjects/IOS VB/OpenGLES/07-Two3DShapes-Animation/01-White/02-TwoShapes/Window.xcodeproj",
+  "continueBuildingAfterErrors" : true,
+  "dependencyScope" : "workspace",
+  "enableIndexBuildArena" : false,
+  "hideShellScriptEnvironment" : false,
+  "parameters" : {
+    "action" : "indexbuild",
+    "activeArchitecture" : "arm64",
+    "activeRunDestination" : {
+      "disableOnlyActiveArch" : false,
+      "platform" : "iphonesimulator",
+      "sdk" : "iphonesimulator17.5",
+      "sdkVariant" : "iphonesimulator",
+      "supportedArchitectures" : [
+        "arm64",
+        "x86_64"
+      ],
+      "targetArchitecture" : "arm64"
+    },
+    "arenaInfo" : {
+      "buildIntermediatesPath" : "/Users/prasadbhalkikar/Documents/MyProjects/IOS VB/OpenGLES/07-Two3DShapes-Animation/01-White/02-TwoShapes/DerivedData/Window/Index.noindex/Build/Intermediates.noindex",
+      "buildProductsPath" : "/Users/prasadbhalkikar/Documents/MyProjects/IOS VB/OpenGLES/07-Two3DShapes-Animation/01-White/02-TwoShapes/DerivedData/Window/Index.noindex/Build/Products",
+      "derivedDataPath" : "/Users/prasadbhalkikar/Documents/MyProjects/IOS VB/OpenGLES/07-Two3DShapes-Animation/01-White/02-TwoShapes/DerivedData",
+      "indexDataStoreFolderPath" : "/Users/prasadbhalkikar/Documents/MyProjects/IOS VB/OpenGLES/07-Two3DShapes-Animation/01-White/02-TwoShapes/DerivedData/Window/Index.noindex/DataStore",
+      "indexEnableDataStore" : true,
+      "indexPCHPath" : "/Users/prasadbhalkikar/Documents/MyProjects/IOS VB/OpenGLES/07-Two3DShapes-Animation/01-White/02-TwoShapes/DerivedData/Window/Index.noindex/PrecompiledHeaders",
+      "indexRegularBuildIntermediatesPath" : "/Users/prasadbhalkikar/Documents/MyProjects/IOS VB/OpenGLES/07-Two3DShapes-Animation/01-White/02-TwoShapes/DerivedData/Window/Build/Intermediates.noindex",
+      "indexRegularBuildProductsPath" : "/Users/prasadbhalkikar/Documents/MyProjects/IOS VB/OpenGLES/07-Two3DShapes-Animation/01-White/02-TwoShapes/DerivedData/Window/Build/Products",
+      "pchPath" : "/Users/prasadbhalkikar/Documents/MyProjects/IOS VB/OpenGLES/07-Two3DShapes-Animation/01-White/02-TwoShapes/DerivedData/Window/Index.noindex/Build/Intermediates.noindex/PrecompiledHeaders"
+    },
+    "configurationName" : "Debug",
+    "overrides" : {
+      "synthesized" : {
+        "table" : {
+          "ENABLE_PREVIEWS" : "NO",
+          "ENABLE_XOJIT_PREVIEWS" : "NO",
+          "ONLY_ACTIVE_ARCH" : "YES"
+        }
+      }
+    }
+  },
+  "qos" : "utility",
+  "schemeCommand" : "launch",
+  "showNonLoggedProgress" : true,
+  "useDryRun" : false,
+  "useImplicitDependencies" : true,
+  "useLegacyBuildLocations" : false,
+  "useParallelTargets" : true
+}

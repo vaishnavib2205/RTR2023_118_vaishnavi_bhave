@@ -1,0 +1,6 @@
+Program started successfully 
+HARDWARE Found !!!11.0 Feature Level Found !!!Vertex Shader comipled Successfully !!!Create VertexShader Successeded !!!Pixel Shader comipled Successfully !!!Create PixelShader Successeded !!!CreateInputLayout on gpID3D11Device is Success !!!CreateBuffer is Success for position buffer !!!CreateBuffer is Success for color buffer !!!CreateBuffer is Success for constant buffer !!!CreateRasterizerState is Success !!!CreateWICTextureFromFile is Success !!! 
+loadD3DTexture is Success !!! 
+CreateSamplerState is Success !!! 
+CreateRenderTargetView is Success !!!CreateDepthStencilView is Success !!!Resize is Success !!! 
+Initialize is Success !!!Log File Is Successfully Closed !!!

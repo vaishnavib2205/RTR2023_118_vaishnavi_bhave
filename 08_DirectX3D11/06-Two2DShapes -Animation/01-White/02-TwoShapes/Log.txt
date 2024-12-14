@@ -1,0 +1,2 @@
+Program started successfully 
+HARDWARE Found !!!11.0 Feature Level Found !!!Vertex Shader comipled Successfully !!!Create VertexShader Successeded !!!Pixel Shader comipled Successfully !!!Create PixelShader Successeded !!!CreateInputLayout on gpID3D11Device is Success !!!CreateBuffer is Success for position buffer !!!gpID3D11Device->CreateBuffer position for pyramid function succeded...CreateBuffer is Success for constant buffer !!!CreateRenderTargetView is Success !!!Resize is Success !!!Initialize is Success !!!Log File Is Successfully Closed !!!

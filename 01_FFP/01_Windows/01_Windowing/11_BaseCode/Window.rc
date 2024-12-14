@@ -1,0 +1,6 @@
+//rc file : resource script file => resources astat => icon cha naav MyIcon.ico
+#include<windows.h>
+
+#include "Window.h"
+
+MYICON ICON MyIcon.ico
